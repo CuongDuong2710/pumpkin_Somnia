@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pumpkin Candy Collector - Halloween Mini-Game on Somnia</title>
+    <style>
+        body { background-color: #1a1a1a; color: #fff; font-family: Arial, sans-serif; text-align: center; }
+        canvas { border: 2px solid orange; background-color: #000; cursor: pointer; }
+        button { background-color: orange; color: black; padding: 10px 20px; margin: 10px; border: none; cursor: pointer; }
+        #leaderboard { margin-top: 20px; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+</head>
+<body>
+    <h1>Pumpkin Candy Collector</h1>
+    <p>Click the pumpkin to collect candies! You have 30 seconds. Halloween spirits will try to distract you!</p>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <p>Score: <span id="score">0</span> | Time: <span id="time">30</span></p>
+    <button id="startBtn">Start Game</button>
+    <button id="connectBtn">Connect Wallet</button>
+    <button id="submitBtn" disabled>Submit Score to Somnia</button>
+    <div id="status"></div>
+    <div id="leaderboard">
+        <h2>Leaderboard (Top 5)</h2>
+        <ul id="leaderboardList"></ul>
+    </div>
+
+    <script>
+        const CONTRACT_ADDRESS = '0x2f4016FBD38e9e2E54043154F04995bD13CE7db2'; // Replace with your deployed address
+        const CONTRACT_ABI = [
+            {"inputs":[{"internalType":"uint256","name":"_score","type":"uint256"}],"name":"submitScore","outputs":[],"stateMutability":"nonpayable","type":"function"},
+            {"inputs":[{"internalType":"address","name":"_player","type":"address"}],"name":"getScore","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"uint256","name":"_limit","type":"uint256"}],"name":"getLeaderboard","outputs":[{"internalType":"address[]","name":"","type":"address[]"},{"internalType":"uint256[]","name":"","type":"uint256[]"}],"stateMutability":"view","type":"function"}
+        ];
+
+        let provider, signer, contract;
+        let score = 0;
+        let time = 30;
+        let gameRunning = false;
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startBtn = document.getElementById('startBtn');
+        const connectBtn = document.getElementById('connectBtn');
+        const submitBtn = document.getElementById('submitBtn');
+        const status = document.getElementById('status');
+        const leaderboardList = document.getElementById('leaderboardList');
+
+        // Somnia Mainnet Config
+        const somniaProvider = new ethers.providers.JsonRpcProvider('https://api.infra.mainnet.somnia.network/');
+
+        // Draw Pumpkin
+        function drawPumpkin() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'orange';
+            ctx.beginPath();
+            ctx.arc(200, 200, 150, 0, Math.PI * 2);
+            ctx.fill();
+            // Eyes
+            ctx.fillStyle = 'black';
+            ctx.beginPath();
+            ctx.moveTo(150, 150);
+            ctx.lineTo(120, 200);
+            ctx.lineTo(180, 200);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(250, 150);
+            ctx.lineTo(220, 200);
+            ctx.lineTo(280, 200);
+            ctx.fill();
+            // Mouth
+            ctx.beginPath();
+            ctx.arc(200, 250, 80, 0, Math.PI, false);
+            ctx.fill();
+            // Stem
+            ctx.fillStyle = 'green';
+            ctx.fillRect(180, 50, 40, 50);
+        }
+
+        // Game Logic
+        canvas.addEventListener('click', () => {
+            if (gameRunning) {
+                score++;
+                document.getElementById('score').innerText = score;
+                // Random "spooky" effect: shake canvas
+                canvas.style.transform = `translate(${Math.random()*10-5}px, ${Math.random()*10-5}px)`;
+                setTimeout(() => canvas.style.transform = 'none', 100);
+            }
+        });
+
+        startBtn.addEventListener('click', () => {
+            if (!gameRunning) {
+                score = 0;
+                time = 30;
+                document.getElementById('score').innerText = score;
+                document.getElementById('time').innerText = time;
+                gameRunning = true;
+                startBtn.disabled = true;
+                submitBtn.disabled = true;
+                const timer = setInterval(() => {
+                    time--;
+                    document.getElementById('time').innerText = time;
+                    if (time <= 0) {
+                        clearInterval(timer);
+                        gameRunning = false;
+                        startBtn.disabled = false;
+                        submitBtn.disabled = false;
+                        status.innerText = 'Game Over! Final Score: ' + score;
+                    }
+                }, 1000);
+            }
+        });
+
+        // Wallet Connection
+        connectBtn.addEventListener('click', async () => {
+            if (window.ethereum) {
+                try {
+                    await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    provider = new ethers.providers.Web3Provider(window.ethereum);
+                    signer = provider.getSigner();
+                    contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+                    status.innerText = 'Wallet connected!';
+                    connectBtn.disabled = true;
+                    await loadLeaderboard();
+                } catch (err) {
+                    status.innerText = 'Connection failed: ' + err.message;
+                }
+            } else {
+                status.innerText = 'Install MetaMask!';
+            }
+        });
+
+        // Submit Score
+        submitBtn.addEventListener('click', async () => {
+            if (contract && score > 0) {
+                try {
+                    status.innerText = 'Submitting...';
+                    const tx = await contract.submitScore(score);
+                    await tx.wait();
+                    status.innerText = 'Score submitted to Somnia!';
+                    await loadLeaderboard();
+                } catch (err) {
+                    status.innerText = 'Submission failed: ' + err.message;
+                }
+            }
+        });
+
+        // Load Leaderboard
+        async function loadLeaderboard() {
+            if (contract) {
+                const readContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, somniaProvider); // Read-only
+                const [players, scores] = await readContract.getLeaderboard(5);
+                leaderboardList.innerHTML = '';
+                for (let i = 0; i < players.length; i++) {
+                    if (scores[i] > 0) {
+                        const li = document.createElement('li');
+                        li.innerText = `${players[i].slice(0,6)}...${players[i].slice(-4)}: ${scores[i]} candies`;
+                        leaderboardList.appendChild(li);
+                    }
+                }
+            }
+        }
+
+        drawPumpkin(); // Initial draw
+    </script>
+</body>
+</html>
