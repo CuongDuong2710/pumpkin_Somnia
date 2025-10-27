@@ -31,6 +31,11 @@ A fun Halloween-themed browser game where players click on a pumpkin to collect 
 
 ## 🚀 Quick Start
 
+### 🌐 Play Online (Deployed)
+
+**Live Demo:** 
+- 🔗 [Play on Vercel](https://pumpkin-somnia.vercel.app/)
+
 ### Prerequisites
 - Modern web browser (Chrome, Firefox, Safari, Edge)
 - MetaMask wallet extension
@@ -40,7 +45,7 @@ A fun Halloween-themed browser game where players click on a pumpkin to collect 
 
 1. **Open the Game**
    ```
-   Open index.html in your web browser
+   Visit the live demo link above or open index.html locally
    ```
 
 2. **Connect Your Wallet**
@@ -97,7 +102,95 @@ Get top players and their scores
 - **Returns**: Arrays of player addresses and scores
 - **Access**: Public view
 
-## 🏗 Development Setup
+## � Deployment Guide
+
+### Deploy to Netlify (Free)
+
+#### Method 1: Git Integration (Recommended)
+1. **Push to GitHub** (already done!)
+   ```bash
+   git add .
+   git commit -m "Ready for deployment"
+   git push origin main
+   ```
+
+2. **Deploy on Netlify**
+   - Go to [netlify.com](https://netlify.com)
+   - Click "Add new site" → "Import an existing project"
+   - Connect your GitHub account
+   - Select your `pumpkin_Somnia` repository
+   - Build settings:
+     - **Build command**: Leave empty
+     - **Publish directory**: `/` (root)
+   - Click "Deploy site"
+
+3. **Your site will be live at**: `https://random-name-12345.netlify.app`
+   - You can customize the subdomain in site settings
+
+#### Method 2: Drag & Drop
+1. Go to [netlify.com](https://netlify.com)
+2. Drag and drop your project folder to the deploy area
+3. Your site goes live instantly!
+
+### Deploy to Vercel (Free)
+
+#### Method 1: Git Integration (Recommended)
+1. **Deploy on Vercel**
+   - Go to [vercel.com](https://vercel.com)
+   - Click "New Project"
+   - Import your `pumpkin_Somnia` repository from GitHub
+   - Framework preset: **Other**
+   - Root directory: `./`
+   - Build settings: Leave default (no build needed)
+   - Click "Deploy"
+
+2. **Your site will be live at**: `https://pumpkin-somnia.vercel.app`
+
+#### Method 2: Vercel CLI
+```bash
+# Install Vercel CLI
+npm i -g vercel
+
+# Deploy from your project directory
+cd D:\game\pumpkin_Somnia
+vercel
+
+# Follow the prompts:
+# - Set up and deploy? Yes
+# - Which scope? Your account
+# - Link to existing project? No
+# - Project name: pumpkin-somnia
+# - Directory: ./
+```
+
+### 🔧 Post-Deployment Configuration
+
+After deployment, update your live URLs:
+
+1. **Update README badges**:
+   ```markdown
+   [![Live Demo](https://img.shields.io/badge/Demo-Live-success?style=for-the-badge&logo=netlify)](https://your-actual-url.netlify.app)
+   ```
+
+2. **Test the deployment**:
+   - Verify the game loads correctly
+   - Test wallet connection
+   - Ensure smart contract interaction works
+   - Check responsive design on mobile
+
+3. **Optional: Custom Domain**
+   - Netlify: Site settings → Domain management
+   - Vercel: Project settings → Domains
+   - Both platforms support custom domains for free
+
+### 🚀 Automatic Deployments
+
+Both platforms offer automatic deployments:
+- **Push to main branch** → **Auto-deploy**
+- View deployment logs in dashboard
+- Rollback to previous versions if needed
+
+## �🏗 Development Setup
 
 ### Local Development
 
